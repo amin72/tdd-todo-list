@@ -11,3 +11,7 @@ class HomePageTest(TestCase):
         self.assertIn(b'<title>To-Do Lists</title>', response.content)
         self.assertTrue(response.content.endswith(b'</html>'))
 
+        with open('lists/templates/lists/home.html') as f:
+            expected_content = f.read()
+
+        self.assertEqual(response.content.decode('latin-1'), expected_content)
