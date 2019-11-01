@@ -8,14 +8,14 @@
     <div>
         <form method="post">
             {% csrf_token %}
-            <input type="text" id="id_new_item" placeholder="Enter a to-do item">
+            <input type="text" id="id_new_item" name="item_text" placeholder="Enter a to-do item">
             <button type="submit">Submit</button>
         </form>
     </div>
 
     <div>
         <table id="list-table">
-            <tr><td>1: Buy peacock feathers</td><tr>
+            <tr><td>1: {{ new_item_text }}</td><tr>
         </table>
     </div>
 </body>
