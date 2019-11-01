@@ -1,7 +1,11 @@
 import unittest
+import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import WebDriverException
 
+
+MAX_WAIT = 20
 
 class NewVisitorTest(unittest.TestCase):
     def setUp(self):
@@ -32,31 +36,33 @@ class NewVisitorTest(unittest.TestCase):
         inputbox.send_keys('Buy peacock feathers')
         inputbox.send_keys(Keys.ENTER)
         # now todo list gets updated. and we can retreive new inserted item
-        
-        # table of to-do items, and its rows
-        table = self.browser.find_element_by_id('list-table')
-        rows = table.find_elements_by_tag_name('tr')
 
+        # table of to-do items, and its rows
         # check if our inserted item exists in the rows
-        self.assertIn('1: Buy peacock feathers',
-            [row.text for row in rows]
-        )
+        self.wait_for_row_in_list_table('1: Buy peacock feathers')
 
         # enter another item into the textbox
         inputbox = self.browser.find_element_by_id('id_new_item')
         inputbox.send_keys('Use peacock feathers to make a fly')
         inputbox.send_keys(Keys.ENTER)
 
-        # table of to-do items, and its rows
-        table = self.browser.find_element_by_id('list-table')
-        rows = table.find_elements_by_tag_name('tr')
-
-        # check if our second inserted item exists in the rows
-        self.assertIn('2: Use peacock feathers to make a fly',
-            [row.text for row in rows]  
-        )
+        self.wait_for_row_in_list_table('2: Use peacock feathers to make a fly')
 
         self.fail('Finish the test')
+
+    def wait_for_row_in_list_table(self, row_text):
+        start_time = time.time()
+        while True:
+            try:
+                table = self.browser.find_element_by_id('list-table')
+                rows = table.find_elements_by_tag_name('tr')
+                self.assertIn(row_text, [row.text for row in rows])
+                return
+            except (AssertionError, WebDriverException) as e:
+                if time.time() - start_time > MAX_WAIT:
+                    raise e
+                time.sleep(.5)
+
 
 if __name__ == '__main__':
     unittest.main(warnings='ignore')

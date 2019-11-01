@@ -1,0 +1,22 @@
+<html>
+<head>
+    <title>To-Do Lists</title>
+</head>
+<body>
+    <h1>Start a new To-Do list</h1>
+
+    <div>
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" id="id_new_item" placeholder="Enter a to-do item">
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div>
+        <table id="list-table">
+            <tr><td>1: Buy peacock feathers</td><tr>
+        </table>
+    </div>
+</body>
+</html>
