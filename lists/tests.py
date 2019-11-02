@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from .views import home_page
-from .models import Item
+from .models import Item, List
 
 
 def remove_csrf(html_code):
@@ -34,11 +34,11 @@ class HomePageTest(TestCase):
 
 
     def test_home_page_shows_items_in_database(self):
-        Item.objects.create(text='item 1')
-        Item.objects.create(text='item 2')
+        list = List.objects.create()
+        Item.objects.create(text='item 1', list=list)
+        Item.objects.create(text='item 2', list=list)
 
-        request = HttpRequest()
-        response = home_page(request)
+        response = self.client.get('/lists/the-only-list-in-the-world/')
 
         self.assertIn('item 1', response.content.decode())
         self.assertIn('item 2', response.content.decode())
@@ -63,8 +63,9 @@ class NewListViewText(TestCase):
 class ListViewTest(TestCase):
     
     def test_lists_page_shows_items_in_database(self):
-        Item.objects.create(text='item 1')
-        Item.objects.create(text='item 2')
+        list = List.objects.create()
+        Item.objects.create(text='item 1', list=list)
+        Item.objects.create(text='item 2', list=list)
 
         response = self.client.get('/lists/the-only-list-in-the-world/')
 
@@ -80,16 +81,21 @@ class ListViewTest(TestCase):
 class ItemModelTest(TestCase):
     
     def test_saving_and_retrieving_items_to_the_database(self):
+        first_list = List.objects.create()
         first_item = Item()
         first_item.text = 'Item the first'
+        first_item.list = first_list
         first_item.save()
 
         second_item = Item()
         second_item.text = 'second item'
+        second_item.list = first_list
         second_item.save()
 
         first_item_from_db = Item.objects.all()[0]
         self.assertEqual(first_item_from_db.text, 'Item the first')
+        self.assertEqual(first_item_from_db.list, first_list)
 
         second_item_from_db = Item.objects.all()[1]
         self.assertEqual(second_item_from_db.text, 'second item')
+        self.assertEqual(second_item_from_db.list, first_list)
