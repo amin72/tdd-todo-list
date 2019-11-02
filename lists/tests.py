@@ -6,6 +6,17 @@ from .views import home_page
 from .models import Item
 
 
+def remove_csrf(html_code):
+    '''
+        Remove CSRF Token.
+        On each request csrf token is renewed,
+        So with this method we can get rid of csrf tokens.
+    '''
+    csrf_regex = r'<input[^>]+csrfmiddlewaretoken[^>]+>'
+    return re.sub(csrf_regex, '', html_code)
+
+
+
 class HomePageTest(TestCase):
     def test_home_page_is_about_todo_lists(self):
         request = HttpRequest()
@@ -16,8 +27,8 @@ class HomePageTest(TestCase):
 
         # check if expected content is equal to response content
         expected_content = render_to_string('lists/home.html', request=request)
-        expected_content = HomePageTest.remove_csrf(expected_content)
-        response_content = HomePageTest.remove_csrf(response.content.decode())
+        expected_content = remove_csrf(expected_content)
+        response_content = remove_csrf(response.content.decode())
         self.assertEqual(response_content, expected_content)
 
 
@@ -43,18 +54,19 @@ class HomePageTest(TestCase):
         self.assertEqual(item_from_db.text, 'A new item')
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/')
+        self.assertEqual(response['Location'], '/lists/the-only-list-in-the-world/')
 
 
-    @staticmethod
-    def remove_csrf(html_code):
-        '''
-            Remove CSRF Token.
-            On each request csrf token is renewed,
-            So with this method we can get rid of csrf tokens.
-        '''
-        csrf_regex = r'<input[^>]+csrfmiddlewaretoken[^>]+>'
-        return re.sub(csrf_regex, '', html_code)
+
+class ListViewTest(TestCase):
+    def test_lists_page_shows_items_in_database(self):
+        Item.objects.create(text='item 1')
+        Item.objects.create(text='item 2')
+
+        response = self.client.get('/lists/the-only-list-in-the-world/')
+
+        self.assertIn('item 1', response.content.decode())
+        self.assertContains(response, 'item 2')
 
 
 
