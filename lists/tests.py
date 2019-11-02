@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.http import HttpRequest
 from django.template.loader import render_to_string
 from .views import home_page
+from .models import Item
 
 
 class HomePageTest(TestCase):
@@ -19,21 +20,31 @@ class HomePageTest(TestCase):
         response_content = HomePageTest.remove_csrf(response.content.decode())
         self.assertEqual(response_content, expected_content)
 
-    def test_home_page_can_remember_post_requests(self):
+
+    def test_home_page_shows_items_in_database(self):
+        Item.objects.create(text='item 1')
+        Item.objects.create(text='item 2')
+
+        request = HttpRequest()
+        response = home_page(request)
+
+        self.assertIn('item 1', response.content.decode())
+        self.assertIn('item 2', response.content.decode())
+
+
+    def test_home_page_can_save_post_requests_to_database(self):
         request = HttpRequest()
         request.method = 'POST'
         request.POST['item_text'] = 'A new item'
+
         response = home_page(request)
 
-        self.assertIn('A new item', response.content.decode())
+        item_from_db = Item.objects.all()[0]
+        self.assertEqual(item_from_db.text, 'A new item')
 
-        expected_content = render_to_string('lists/home.html',
-            {'new_item_text': 'A new item'})
-        
-        expected_content = HomePageTest.remove_csrf(expected_content)
-        response_content = HomePageTest.remove_csrf(response.content.decode())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
 
-        self.assertEqual(response_content, expected_content)
 
     @staticmethod
     def remove_csrf(html_code):
@@ -44,3 +55,21 @@ class HomePageTest(TestCase):
         '''
         csrf_regex = r'<input[^>]+csrfmiddlewaretoken[^>]+>'
         return re.sub(csrf_regex, '', html_code)
+
+
+
+class ItemModelTest(TestCase):
+    def test_saving_and_retrieving_items_to_the_database(self):
+        first_item = Item()
+        first_item.text = 'Item the first'
+        first_item.save()
+
+        second_item = Item()
+        second_item.text = 'second item'
+        second_item.save()
+
+        first_item_from_db = Item.objects.all()[0]
+        self.assertEqual(first_item_from_db.text, 'Item the first')
+
+        second_item_from_db = Item.objects.all()[1]
+        self.assertEqual(second_item_from_db.text, 'second item')
