@@ -6,7 +6,7 @@
     <h1>Start a new To-Do list</h1>
 
     <div>
-        <form method="post" action="{% url 'lists:home_page' %}">
+        <form method="post" action="/lists/new/">
             {% csrf_token %}
             <input type="text" id="id_new_item" name="item_text" placeholder="Enter a to-do item">
         </form>

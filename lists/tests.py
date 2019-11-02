@@ -18,6 +18,7 @@ def remove_csrf(html_code):
 
 
 class HomePageTest(TestCase):
+    
     def test_home_page_is_about_todo_lists(self):
         request = HttpRequest()
         response = home_page(request)
@@ -43,22 +44,24 @@ class HomePageTest(TestCase):
         self.assertIn('item 2', response.content.decode())
 
 
+
+class NewListViewText(TestCase):
+
     def test_home_page_can_save_post_requests_to_database(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new item'
-
-        response = home_page(request)
-
+        self.client.post('/lists/new/', {'item_text': 'A new item'})
         item_from_db = Item.objects.all()[0]
         self.assertEqual(item_from_db.text, 'A new item')
 
+    
+    def test_redirects_to_list_url(self):
+        response = self.client.post('/lists/new/', {'item_text': 'A new item'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/lists/the-only-list-in-the-world/')
+        self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
 
 
 
 class ListViewTest(TestCase):
+    
     def test_lists_page_shows_items_in_database(self):
         Item.objects.create(text='item 1')
         Item.objects.create(text='item 2')
@@ -71,6 +74,7 @@ class ListViewTest(TestCase):
 
 
 class ItemModelTest(TestCase):
+    
     def test_saving_and_retrieving_items_to_the_database(self):
         first_item = Item()
         first_item.text = 'Item the first'
