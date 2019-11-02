@@ -1,13 +1,14 @@
-import unittest
 import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
+from django.test import LiveServerTestCase
 
 
 MAX_WAIT = 20
 
-class NewVisitorTest(unittest.TestCase):
+class NewVisitorTest(LiveServerTestCase):
+
     def setUp(self):
         self.browser = webdriver.Firefox()
 
@@ -17,7 +18,7 @@ class NewVisitorTest(unittest.TestCase):
     def test_starting_a_new_todo_list(self):
         '''Some tests on todo list index page'''
 
-        self.browser.get('http://127.0.0.1:8000/')
+        self.browser.get(self.live_server_url)
 
         # our project is a todolist, so To-Do must in the title of /
         self.assertIn('To-Do', self.browser.title)
