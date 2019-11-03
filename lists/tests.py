@@ -34,11 +34,11 @@ class HomePageTest(TestCase):
 
 
     def test_home_page_shows_items_in_database(self):
-        list = List.objects.create()
-        Item.objects.create(text='item 1', list=list)
-        Item.objects.create(text='item 2', list=list)
+        list_ = List.objects.create()
+        Item.objects.create(text='item 1', list=list_)
+        Item.objects.create(text='item 2', list=list_)
 
-        response = self.client.get('/lists/the-only-list-in-the-world/')
+        response = self.client.get(f'/lists/{list_.id}/')
 
         self.assertIn('item 1', response.content.decode())
         self.assertIn('item 2', response.content.decode())
@@ -56,26 +56,39 @@ class NewListViewText(TestCase):
     def test_redirects_to_list_url(self):
         response = self.client.post('/lists/new/', {'item_text': 'A new item'})
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
+        new_list = List.objects.first()
+        self.assertRedirects(response, f'/lists/{new_list.id}/')
 
 
 
 class ListViewTest(TestCase):
     
     def test_lists_page_shows_items_in_database(self):
-        list = List.objects.create()
-        Item.objects.create(text='item 1', list=list)
-        Item.objects.create(text='item 2', list=list)
+        our_list = List.objects.create()
+        Item.objects.create(text='item 1', list=our_list)
+        Item.objects.create(text='item 2', list=our_list)
+        
+        other_list = List.objects.create()
+        Item.objects.create(text='not this one', list=other_list)
 
-        response = self.client.get('/lists/the-only-list-in-the-world/')
+        response = self.client.get(f'/lists/{our_list.id}/')
 
-        self.assertIn('item 1', response.content.decode())
+        self.assertContains(response, 'item 1')
         self.assertContains(response, 'item 2')
+        self.assertNotContains(response, 'not this one')
 
 
     def test_uses_lists_template(self):
-        response = self.client.get('/lists/the-only-list-in-the-world/')
+        list_ = List.objects.create()
+        response = self.client.get(f'/lists/{list_.id}/')
         self.assertTemplateUsed(response, 'lists/list.html')
+
+
+    def test_passes_list_to_template(self):
+        our_list = List.objects.create()
+        response = self.client.get(f'/lists/{our_list.id}/')
+        self.assertEqual(response.context['list'], our_list)
+
 
 
 class ItemModelTest(TestCase):
@@ -99,3 +112,28 @@ class ItemModelTest(TestCase):
         second_item_from_db = Item.objects.all()[1]
         self.assertEqual(second_item_from_db.text, 'second item')
         self.assertEqual(second_item_from_db.list, first_list)
+
+
+
+class AddItemToExistingListTest(TestCase):
+
+    def test_adding_an_item_to_an_existing_list(self):
+        our_list = List.objects.create()
+        self.client.post(f'/lists/{our_list.id}/add/',
+            {'item_text': 'new item for my list'})
+        
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.list, our_list)
+        self.assertEqual(new_item.text, 'new item for my list')
+
+    
+    def test_redirects_to_list_page(self):
+        List.objects.create() # create another list
+        # and create our list.
+        # redirection must go to our list page and not the other list
+        our_list = List.objects.create()
+        response = self.client.post(f'/lists/{our_list.id}/add/',
+            {'item_text': 'new item for my list'})
+        
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, f'/lists/{our_list.id}/')

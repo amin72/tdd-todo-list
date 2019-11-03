@@ -71,18 +71,19 @@ class NewVisitorTest(LiveServerTestCase):
         inputbox.send_keys('Buy milk')
         inputbox.send_keys(Keys.ENTER)
 
+        import time; time.sleep(5)
+
         # save new url
         new_list_url = self.browser.current_url
         # check if url is matched
         self.assertRegex(new_list_url, '/lists/.+') # eg: /lists/2
         # check old and new urls, they must be different urls
-        self.assertNoEqual(new_list_url, old_list_url)
+        self.assertNotEqual(new_list_url, old_list_url)
 
         page_text = self.browser.find_element_by_tag_name('body').text
         self.assertNotIn('Buy peacock feathers', page_text)
         self.assertIn('Buy milk', page_text)
 
-        self.fail('Finish the test')
 
     def wait_for_row_in_list_table(self, row_text):
         start_time = time.time()
